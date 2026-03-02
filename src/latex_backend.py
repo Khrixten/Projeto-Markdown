@@ -1,13 +1,16 @@
 from typing_extensions import override
 from markdown_backend import MarkdownBackend
 
+
 class LatexBackend(MarkdownBackend):
     def __init__(self, out):
         self._out = out
+        self._inside_par = False
+        self._first_par_line = True
     #:
 
     def close(self):
-        pass  # o ficheiro de saída é fechado pelo markos.py
+        pass
     #:
 
     @override
@@ -26,7 +29,6 @@ class LatexBackend(MarkdownBackend):
         self._out.write("\n\\end{document}\n")
     #:
 
-    # Mapeamento de níveis: h1=section, h2=subsection, h3=subsubsection
     _HEADING_MAP = {1: 'section', 2: 'subsection', 3: 'subsubsection'}
 
     @override
@@ -47,22 +49,29 @@ class LatexBackend(MarkdownBackend):
 
     @override
     def open_par(self):
-        pass  # parágrafos são separados por linha em branco
+        self._inside_par = True
+        self._first_par_line = True
     #:
 
     @override
     def close_par(self):
         self._out.write("\n\n")
+        self._inside_par = False
     #:
 
     @override
     def new_par_line(self, line: str):
+        if self._inside_par and not self._first_par_line:
+            self._out.write('\n')
+        self._first_par_line = False
         self._out.write(line)
     #:
 
     @override
     def open_list(self):
         self._out.write("\\begin{itemize}\n")
+        self._inside_par = False
+        self._first_par_line = True
     #:
 
     @override
@@ -73,6 +82,8 @@ class LatexBackend(MarkdownBackend):
     @override
     def open_ordered_list(self):
         self._out.write("\\begin{enumerate}\n")
+        self._inside_par = False
+        self._first_par_line = True
     #:
 
     @override
@@ -83,6 +94,8 @@ class LatexBackend(MarkdownBackend):
     @override
     def open_list_item(self):
         self._out.write("  \\item ")
+        self._inside_par = False
+        self._first_par_line = True
     #:
 
     @override
